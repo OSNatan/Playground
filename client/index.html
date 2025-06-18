@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kids Playground - Home</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FullCalendar CSS via CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.0/main.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-blue-50">
+    <!-- Navigation -->
+    <nav class="bg-purple-600 text-white p-4">
+        <div class="container mx-auto flex justify-between">
+            <h1 class="text-2xl font-bold">Kids Playground</h1>
+            <div id="navLinks">
+                <a href="index.html" class="mr-4">Home</a>
+                <a href="calendar.html" class="mr-4">Reservations</a>
+                <a href="login.html" id="loginLink">Login</a>
+                <button id="logoutBtn" class="hidden bg-purple-700 px-3 py-1 rounded">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <div class="container mx-auto p-4">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-3xl font-bold text-purple-800 mb-4">Welcome to Kids Playground!</h2>
+            <p class="mb-4">The perfect place to host your child's birthday party or special event!</p>
+            <p class="mb-4">Our playground offers:</p>
+            <ul class="list-disc ml-6 mb-4">
+                <li>Safe and fun environment</li>
+                <li>Dedicated party rooms</li>
+                <li>Flexible decoration options</li>
+                <li>Music of your choice</li>
+            </ul>
+            <div class="mt-6">
+                <a href="calendar.html" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">View Available Slots</a>
+            </div>
+        </div>
+        
+        <!-- User-specific content (shown only when logged in) -->
+        <div id="userContent" class="hidden bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-2xl font-bold text-purple-800 mb-4">Your Reservations</h3>
+            <div id="userReservations" class="grid gap-4">
+                <!-- Reservations will be loaded here -->
+                <p id="noReservations" class="text-gray-500">You have no reservations yet.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-purple-800 text-white p-4 mt-8">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2025 Kids Playground. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.0/main.min.js"></script>
+    <!-- Custom scripts -->
+    <script src="js/auth.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
