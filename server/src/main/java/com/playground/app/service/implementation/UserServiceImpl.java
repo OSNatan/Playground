@@ -1,60 +1,47 @@
 package com.playground.app.service.implementation;
 
-import com.playground.app.exception.ResourceNotFoundException;
-import com.playground.app.model.dto.UserDTO;
-import com.playground.app.model.dto.UserRegistrationDTO;
 import com.playground.app.model.entity.User;
-import com.playground.app.model.repository.UserRepository;
+import com.playground.app.repository.UserRepository;
 import com.playground.app.service.UserService;
-import org.mindrot.jbcrypt.BCrypt;
+import com.playground.app.model.dto.UserRegistrationDTO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserRepository userRepository) {
+    @Autowired
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    @Override
     public User registerUser(UserRegistrationDTO registrationDTO) {
-
-        if (userRepository.existsByUsername(registrationDTO.getUsername())) {
-            throw new IllegalArgumentException("Username already exists");
-        }
-
-        if (userRepository.existsByEmail(registrationDTO.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
-        }
-
         User user = new User();
         user.setUsername(registrationDTO.getUsername());
         user.setEmail(registrationDTO.getEmail());
-
-        String hashedPassword = BCrypt.hashpw(registrationDTO.getPassword(), BCrypt.gensalt());
+        String hashedPassword = passwordEncoder.encode(registrationDTO.getPassword());
         user.setPassword(hashedPassword);
-
         return userRepository.save(user);
     }
 
-    public boolean checkPassword(String plainPassword, String hashedPassword) {
-        return BCrypt.checkpw(plainPassword, hashedPassword);
+    @Override
+    public User createUser(User user) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        return userRepository.save(user);
     }
 
     @Override
     public User getUserById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
-    }
-
-    @Override
-    public User getUserByUsername(String username) {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
     }
 
     @Override
@@ -63,37 +50,37 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User updateUser(Long id, UserDTO userDTO) {
-        User user = getUserById(id);
-
-        if (userDTO.getEmail() != null) {
-
-            if (!user.getEmail().equals(userDTO.getEmail()) && 
-                userRepository.existsByEmail(userDTO.getEmail())) {
-                throw new IllegalArgumentException("Email already in use");
-            }
-            user.setEmail(userDTO.getEmail());
-        }
-
+    public User updateUser(User user) {
         return userRepository.save(user);
     }
 
     @Override
     public void deleteUser(Long id) {
+        userRepository.deleteById(id);
+    }
 
-        User user = getUserById(id);
-        userRepository.delete(user);
+    @Override
+    public Optional<User> findByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
+
+    @Override
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 
     @Override
     public boolean existsByUsername(String username) {
-
         return userRepository.existsByUsername(username);
     }
 
     @Override
     public boolean existsByEmail(String email) {
-
         return userRepository.existsByEmail(email);
+    }
+
+    @Override
+    public User getUserByUsername(String username) {
+        return userRepository.getByUsername(username);
     }
 }

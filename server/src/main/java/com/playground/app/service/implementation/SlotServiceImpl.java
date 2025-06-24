@@ -3,7 +3,7 @@ package com.playground.app.service.implementation;
 import com.playground.app.exception.ResourceNotFoundException;
 import com.playground.app.model.dto.SlotDTO;
 import com.playground.app.model.entity.Slot;
-import com.playground.app.model.repository.SlotRepository;
+import com.playground.app.repository.SlotRepository;
 import com.playground.app.service.SlotService;
 import org.springframework.stereotype.Service;
 

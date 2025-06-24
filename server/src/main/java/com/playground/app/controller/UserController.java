@@ -1,68 +1,91 @@
 package com.playground.app.controller;
 
-import com.playground.app.model.dto.LoginRequestDTO;
-import com.playground.app.model.dto.LoginResponseDTO;
-import com.playground.app.model.dto.UserDTO;
-import com.playground.app.model.dto.UserRegistrationDTO;
+import com.playground.app.model.dto.*;
 import com.playground.app.model.entity.User;
-import com.playground.app.service.implementation.UserServiceImpl;
+import com.playground.app.security.JwtTokenProvider;
+import com.playground.app.service.UserService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
-//@CrossOrigin(origins = "http://localhost:5500", allowCredentials = "true")
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
 
-    private final UserServiceImpl userService;
+    private final UserService userService;
+    private final AuthenticationManager authenticationManager;
+    private final JwtTokenProvider tokenProvider;
 
-    public UserController(UserServiceImpl userService) {
+    @Autowired
+    public UserController(UserService userService, AuthenticationManager authenticationManager,
+                          JwtTokenProvider tokenProvider) {
         this.userService = userService;
+        this.authenticationManager = authenticationManager;
+        this.tokenProvider = tokenProvider;
     }
 
     @PostMapping("/register")
-    public ResponseEntity<UserDTO> registerUser( @RequestBody UserRegistrationDTO registrationDTO) {
-        User user = userService.registerUser(registrationDTO);
-        return new ResponseEntity<>(convertToDTO(user), HttpStatus.CREATED);
+    public ResponseEntity<?> registerUser(@Valid @RequestBody UserRegistrationDTO registrationDTO) {
+        if (userService.existsByUsername(registrationDTO.getUsername())) {
+            return ResponseEntity.badRequest().body("Username is already taken!");
+        }
+
+        if (userService.existsByEmail(registrationDTO.getEmail())) {
+            return ResponseEntity.badRequest().body("Email is already in use!");
+        }
+
+        User savedUser = userService.registerUser(registrationDTO);
+        UserDTO userDTO = convertToDTO(savedUser);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(userDTO);
     }
-    
+
     @PostMapping("/login")
-    public ResponseEntity<?> login( @RequestBody LoginRequestDTO loginRequest) {
+    public ResponseEntity<?> login(@Valid @RequestBody UserLoginDTO loginDTO) {
         try {
-            User user = userService.getUserByUsername(loginRequest.getUsername());
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginDTO.getUsername(),
+                            loginDTO.getPassword()
+                    )
+            );
 
-            if (userService.checkPassword(loginRequest.getPassword(), user.getPassword())) {
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                LoginResponseDTO response = new LoginResponseDTO();
-                response.setId(user.getId());
-                response.setUsername(user.getUsername());
-                response.setEmail(user.getEmail());
-                
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("Invalid username or password");
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Invalid username or password");
+            String jwt = tokenProvider.generateToken(loginDTO.getUsername());
+
+            User user = userService.findByUsername(loginDTO.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            JwtResponseDTO response = new JwtResponseDTO(jwt, "Bearer",
+                    user.getId(),
+                    user.getUsername(),
+                    user.getEmail());
+
+            return ResponseEntity.ok(response);
+
+        } catch (AuthenticationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
         }
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
-        User user = userService.getUserById(id);
-        return ResponseEntity.ok(convertToDTO(user));
-    }
+    @GetMapping("/me")
+    public ResponseEntity<UserDTO> getCurrentUser(Authentication authentication) {
+        String username = authentication.getName();
+        User user = userService.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-    @GetMapping("/username/{username}")
-    public ResponseEntity<UserDTO> getUserByUsername(@PathVariable String username) {
-        User user = userService.getUserByUsername(username);
         return ResponseEntity.ok(convertToDTO(user));
     }
 
@@ -72,44 +95,58 @@ public class UserController {
         List<UserDTO> userDTOs = users.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+
         return ResponseEntity.ok(userDTOs);
     }
 
-//    @PutMapping("/{id}")
-//    public ResponseEntity<UserDTO> updateUser(
-//            @PathVariable Long id,
-//            @Valid @RequestBody UserDTO userDTO) {
-//
-//        User updatedUser = userService.updateUser(id, userDTO);
-//        return ResponseEntity.ok(convertToDTO(updatedUser));
-//    }
+    @GetMapping("/{id}")
+    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Long id) {
+        User user = userService.getUserById(id);
+        UserResponseDTO userResponseDTO = convertToResponseDTO(user);
+
+        return ResponseEntity.ok(userResponseDTO);
+    }
+
+    @GetMapping("/username/{username}")
+    public ResponseEntity<UserDTO> getUserByUsername(@PathVariable String username) {
+        User user = userService.getUserByUsername(username);
+        return ResponseEntity.ok(convertToDTO(user));
+    }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<String> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok("User deleted successfully");
     }
 
     @GetMapping("/check-username")
-    public ResponseEntity<Boolean> checkUsernameExists(@RequestParam String username) {
+    public ResponseEntity<Boolean> checkUsernameAvailability(@RequestParam String username) {
         boolean exists = userService.existsByUsername(username);
-        return ResponseEntity.ok(exists);
+        return ResponseEntity.ok(!exists);
     }
 
     @GetMapping("/check-email")
-    public ResponseEntity<Boolean> checkEmailExists(@RequestParam String email) {
+    public ResponseEntity<Boolean> checkEmailAvailability(@RequestParam String email) {
         boolean exists = userService.existsByEmail(email);
-        return ResponseEntity.ok(exists);
+        return ResponseEntity.ok(!exists);
     }
 
-    /**
-     * Convert User entity to UserDTO
-     */
     private UserDTO convertToDTO(User user) {
-        UserDTO userDTO = new UserDTO();
-        userDTO.setId(user.getId());
-        userDTO.setUsername(user.getUsername());
-        userDTO.setEmail(user.getEmail());
-        return userDTO;
+        return new UserDTO(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getCreationDate()
+        );
+    }
+
+    private UserResponseDTO convertToResponseDTO(User user) {
+        return new UserResponseDTO(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getCreationDate(),
+                user.getReservations()
+        );
     }
 }

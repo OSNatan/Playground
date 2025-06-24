@@ -1,4 +1,4 @@
-package com.playground.app.model.repository;
+package com.playground.app.repository;
 
 import com.playground.app.model.entity.Slot;
 import org.springframework.data.jpa.repository.JpaRepository;
