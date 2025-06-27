@@ -3,6 +3,8 @@ package com.playground.app.model.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @Setter
@@ -21,14 +23,13 @@ public class Reservation {
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 
-    @Column(name = "bring_own_food")
-    private boolean bringOwnFood;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "slot_id", unique = true)
+    private Slot slot;
 
     @Column(name = "gender")
-    private boolean gender;
-
-    //@Column(name = "double_time_slot")
-    //private boolean doubleTimeSlot;
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
 
     @Column(name = "music_type")
     private String musicType;
@@ -36,9 +37,15 @@ public class Reservation {
     @Column(name = "decoration_style")
     private String decorationStyle;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "slot_id", unique = true)
-    private Slot slot;
+    @Column(name = "bring_own_food")
+    private boolean bringOwnFood;
 
+    @Column
+    private LocalDateTime creationDate;
+
+    @PrePersist
+    protected void onCreate() {
+        creationDate = LocalDateTime.now();
+    }
 }
 

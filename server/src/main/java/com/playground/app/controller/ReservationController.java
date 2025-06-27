@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/reservations")
-//@CrossOrigin(origins = {"http://localhost:5500", "http://127.0.0.1:5500"}, allowCredentials = "true")
 public class ReservationController {
 
     private final ReservationService reservationService;
@@ -28,7 +27,7 @@ public class ReservationController {
 
     @PostMapping
     public ResponseEntity<ReservationResponseDTO> createReservation(
-             @RequestBody ReservationRequestDTO reservationRequestDTO) {
+             @Valid @RequestBody ReservationRequestDTO reservationRequestDTO) {
         
         Reservation reservation = reservationService.createReservation(reservationRequestDTO);
         return new ResponseEntity<>(convertToResponseDTO(reservation), HttpStatus.CREATED);
@@ -71,24 +70,6 @@ public class ReservationController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/available-slots")
-    public ResponseEntity<List<SlotDTO>> getAvailableSlots(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        
-        List<SlotDTO> availableSlots = reservationService.getAvailableSlots(startDate, endDate);
-        return ResponseEntity.ok(availableSlots);
-    }
-
-    @GetMapping("/booked-slots")
-    public ResponseEntity<List<SlotDTO>> getBookedSlots(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        
-        List<SlotDTO> bookedSlots = reservationService.getBookedSlots(startDate, endDate);
-        return ResponseEntity.ok(bookedSlots);
-    }
-
     private ReservationResponseDTO convertToResponseDTO(Reservation reservation) {
 
         ReservationResponseDTO responseDTO = new ReservationResponseDTO();
@@ -96,9 +77,8 @@ public class ReservationController {
         responseDTO.setUserId(reservation.getUser().getId());
         responseDTO.setUserName(reservation.getUser().getUsername());
         responseDTO.setDate(reservation.getSlot().getDate());
-        responseDTO.setStartTime(reservation.getSlot().getStartTime());
-        responseDTO.setEndTime(reservation.getSlot().getEndTime());
-        responseDTO.setGender(reservation.isGender());
+        responseDTO.setSlotNumber(reservation.getSlot().getSlotNumber());
+        responseDTO.setGender(reservation.getGender());
         responseDTO.setBringOwnFood(reservation.isBringOwnFood());
         responseDTO.setDecorationStyle(reservation.getDecorationStyle());
         responseDTO.setMusicType(reservation.getMusicType());

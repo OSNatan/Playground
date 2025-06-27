@@ -13,7 +13,7 @@ import java.time.LocalTime;
 public class SlotDTO {
     private Long id;
     private LocalDate date;
-    private LocalTime startTime;
-    private LocalTime endTime;
+    private Integer slotNumber;
     private boolean available;
+
 }

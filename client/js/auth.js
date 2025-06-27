@@ -53,6 +53,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+function setupAxiosInterceptors() {
+    axios.interceptors.request.use(config => {
+        const user = getLoggedInUser();
+        if (user && user.token) {
+            config.headers.Authorization = `Bearer ${user.token}`;
+        }
+        return config;
+    });
+}
+
 function updateNavigation() {
     const user = getLoggedInUser();
     const logoutBtn = document.getElementById('logoutBtn');

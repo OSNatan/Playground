@@ -1,22 +1,19 @@
 (() => {
-const API_BASE_URL = "http://localhost:8080"; // Update if needed
+const API_BASE_URL = "http://localhost:8080/api"; // Update if needed
 
 let calendar;
 let selectedSlot;
 let currentUser = null;
 
-async function fetchUserInfo() {
-    try {
-        const response = await axios.get(`${API_BASE_URL}/user`);
-        currentUser = response.data;
-        updateUserUI();
-        loadUserReservations();
-    } catch (error) {
-        console.error("User not logged in");
-        currentUser = null;
-        updateUserUI();
+function fetchUserInfo() {
+        currentUser = getLoggedInUser();
+        if (currentUser) {
+            updateUserUI();
+            loadUserReservations();
+        } else {
+            updateUserUI();
+        }
     }
-}
 
 function updateUserUI() {
     const userInfo = document.getElementById("user-info");
@@ -129,7 +126,7 @@ async function loadEvents(start, end) {
     try {
         const response = await axios.get(`${API_BASE_URL}/reservations`);
         const events = response.data.map(res => ({
-            title: `Reserved by ${res.user.name}`,
+            title: `Reserved by ${res.user.username}`,
             start: res.startTime,
             end: res.endTime,
             color: "red",
@@ -178,7 +175,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("confirm-reservation-btn").addEventListener("click", makeReservation);
     document.getElementById("close-modal-btn").addEventListener("click", closeReservationModal);
     document.getElementById("logout-btn").addEventListener("click", () => {
-        axios.post(`${API_BASE_URL}/logout`).then(() => location.reload());
+        //axios.post(`${API_BASE_URL}/logout`).then(() => location.reload());
     });
 });
 })();

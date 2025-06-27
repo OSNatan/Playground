@@ -4,13 +4,11 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
 
 @Entity
 @Getter
 @Setter
-@Table(name = "\"slot\"")
+@Table(name = "\"slot\"", uniqueConstraints = @UniqueConstraint(columnNames = {"date", "slot_number"}))
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -24,15 +22,8 @@ public class Slot {
     @Column(name = "date")
     private LocalDate date;
 
-    @Column(name = "start_time")
-    private LocalTime startTime;
-
-    @Column(name = "end_time")
-    private LocalTime endTime;
-
-    //Transient
-    @Column(name = "available")
-    private boolean available;
+    @Column(name = "slot_number")
+    private Integer slotNumber;
 
     @OneToOne(mappedBy = "slot")
     private Reservation reservation;

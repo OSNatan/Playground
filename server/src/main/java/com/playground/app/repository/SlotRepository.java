@@ -10,5 +10,5 @@ import java.util.List;
 public interface SlotRepository extends JpaRepository<Slot, Long> {
     List<Slot> findByDateBetween(LocalDate startDate, LocalDate endDate);
     List<Slot> findByDate(LocalDate date);
-    public boolean existsByDateAndStartTime(LocalDate date, LocalTime startTime);
+    public boolean existsByDateAndStartTime(LocalTime startTime);
 }

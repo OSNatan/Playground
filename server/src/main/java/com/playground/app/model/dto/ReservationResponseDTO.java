@@ -1,5 +1,6 @@
 package com.playground.app.model.dto;
 
+import com.playground.app.model.entity.Gender;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -13,9 +14,8 @@ public class ReservationResponseDTO {
     private Long userId;
     private String userName;
     private LocalDate date;
-    private LocalTime startTime;
-    private LocalTime endTime;
-    private boolean gender;
+    private Integer slotNumber;
+    private Gender gender;
     private boolean bringOwnFood;
     private String decorationStyle;
     private String musicType;

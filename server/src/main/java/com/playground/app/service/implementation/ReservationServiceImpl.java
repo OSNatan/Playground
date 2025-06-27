@@ -41,23 +41,16 @@ public class ReservationServiceImpl implements ReservationService {
         User user = userRepository.findById(requestDTO.getUserId())
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        LocalDate requestedDate = requestDTO.getStartTime().toLocalDate();
-        LocalTime requestedStartTime = normalizeToSlotStart(requestDTO.getStartTime().toLocalTime());
-        LocalTime slotEndTime = requestedStartTime.plusHours(4);
-
-        if (isSlotBooked(requestedDate, requestedStartTime)) {
+        if (isSlotBooked( requestedStartTime)) {
             throw new IllegalStateException("The requested time slot is already booked");
         }
 
         Slot slot = new Slot();
-        slot.setDate(requestedDate);
-        slot.setStartTime(requestedStartTime);
-        slot.setEndTime(slotEndTime);
-        slot.setAvailable(false); // It's being booked now
+        slot.setSlotNumber();
 
         Reservation reservation = new Reservation();
         reservation.setUser(user);
-        reservation.setGender(requestDTO.isGender());
+        reservation.setGender(requestDTO.getGender());
         reservation.setBringOwnFood(requestDTO.isBringOwnFood());
         reservation.setDecorationStyle(requestDTO.getDecorations());
         reservation.setMusicType(requestDTO.getMusic());
@@ -124,8 +117,7 @@ public class ReservationServiceImpl implements ReservationService {
             .map(slot -> new SlotDTO(
                 slot.getId(),
                 slot.getDate(),
-                slot.getStartTime(),
-                slot.getEndTime(),
+                slot.getSlotNumber(),
                 false // Not available
             ))
             .collect(Collectors.toList());
@@ -137,18 +129,17 @@ public class ReservationServiceImpl implements ReservationService {
     private LocalTime normalizeToSlotStart(LocalTime requestedTime) {
         int hour = requestedTime.getHour();
 
-        if (hour < 8) return LocalTime.of(8, 0); // First slot
-        if (hour < 12) return LocalTime.of(8, 0); // First slot
-        if (hour < 16) return LocalTime.of(12, 0); // Second slot
-        return LocalTime.of(16, 0); // Third slot
+        if (hour < 12) return LocalTime.of(8, 0);
+        if (hour < 16) return LocalTime.of(12, 0);
+        return LocalTime.of(16, 0);
     }
 
     /**
      * Checks if a slot is already booked for the given date and start time
      */
-    private boolean isSlotBooked(LocalDate date, LocalTime startTime) {
+    private boolean isSlotBooked(LocalTime startTime) {
 
-        return slotRepository.existsByDateAndStartTime(date, startTime);
+        return slotRepository.existsByDateAndStartTime(startTime);
     }
 
     private List<SlotDTO> generateAllPossibleSlots(LocalDate startDate, LocalDate endDate) {
