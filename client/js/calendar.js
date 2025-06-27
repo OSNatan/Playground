@@ -5,29 +5,43 @@ let calendar;
 let selectedSlot;
 let currentUser = null;
 
-function fetchUserInfo() {
-        currentUser = getLoggedInUser();
-        if (currentUser) {
-            updateUserUI();
-            loadUserReservations();
-        } else {
-            updateUserUI();
-        }
+async function fetchUserInfo() {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/users/me`);
+        currentUser = response.data;
+        updateUserUI();
+        loadUserReservations();
+    } catch (error) {
+        console.error("User not logged in", error);
+        currentUser = null;
+        updateUserUI();
     }
+}
 
 function updateUserUI() {
-    const userInfo = document.getElementById("user-info");
-    const loginBtn = document.getElementById("login-btn");
-    const logoutBtn = document.getElementById("logout-btn");
+    const navLinks = document.getElementById("navLinks");
+    const loginLink = document.getElementById("loginLink");
+    const logoutBtn = document.getElementById("logoutBtn");
 
     if (currentUser) {
-        userInfo.innerHTML = `Logged in as <strong>${currentUser.name}</strong>`;
-        loginBtn.style.display = "none";
-        logoutBtn.style.display = "inline-block";
+        // Add user info to navigation
+        if (!document.getElementById("user-info")) {
+            const userInfo = document.createElement("span");
+            userInfo.id = "user-info";
+            userInfo.className = "mr-4";
+            navLinks.insertBefore(userInfo, loginLink);
+        }
+        document.getElementById("user-info").innerHTML = `Logged in as <strong>${currentUser.username}</strong>`;
+
+        loginLink.style.display = "none";
+        logoutBtn.classList.remove("hidden");
     } else {
-        userInfo.innerHTML = "Not logged in";
-        loginBtn.style.display = "inline-block";
-        logoutBtn.style.display = "none";
+        const userInfo = document.getElementById("user-info");
+        if (userInfo) {
+            userInfo.remove();
+        }
+        loginLink.style.display = "inline-block";
+        logoutBtn.classList.add("hidden");
     }
 }
 
@@ -41,28 +55,62 @@ function formatTime(time) {
 }
 
 function showReservationModal(slotInfo) {
-    const modal = document.getElementById("reservation-modal");
-    modal.style.display = "block";
+    const modal = document.getElementById("reservationForm");
+    modal.classList.remove("hidden");
 
     selectedSlot = slotInfo;
 
-    const slotDetails = document.getElementById("slot-details");
-    slotDetails.innerText = `Reserve: ${slotInfo.startStr} → ${slotInfo.endStr}`;
+    // Format the date and time for display
+    const startDate = new Date(slotInfo.startStr);
+    const formattedDate = startDate.toLocaleDateString();
+
+    // Determine time slot based on hour
+    const startHour = startDate.getHours();
+    let timeSlot = "";
+    if (startHour >= 8 && startHour < 12) {
+        timeSlot = "8:00 - 12:00";
+    } else if (startHour >= 13 && startHour < 17) {
+        timeSlot = "13:00 - 17:00";
+    } else if (startHour >= 18 && startHour < 22) {
+        timeSlot = "18:00 - 22:00";
+    }
+
+    // Update the slot details in the form
+    document.getElementById("slotDate").innerText = formattedDate;
+    document.getElementById("slotTime").innerText = timeSlot;
 }
 
 function closeReservationModal() {
-    const modal = document.getElementById("reservation-modal");
-    modal.style.display = "none";
+    const modal = document.getElementById("reservationForm");
+    modal.classList.add("hidden");
     selectedSlot = null;
 }
 
 async function makeReservation() {
     if (!selectedSlot || !currentUser) return;
 
+    // Convert the selected time to a slot number (0: 8-12, 1: 13-17, 2: 18-22)
+    const startHour = new Date(selectedSlot.startStr).getHours();
+    let slotNumber;
+
+    if (startHour >= 8 && startHour < 12) {
+        slotNumber = 0; // Morning slot (8-12)
+    } else if (startHour >= 13 && startHour < 17) {
+        slotNumber = 1; // Afternoon slot (13-17)
+    } else if (startHour >= 18 && startHour < 22) {
+        slotNumber = 2; // Evening slot (18-22)
+    } else {
+        alert("Invalid time slot. Please select a time between 8:00-12:00, 13:00-17:00, or 18:00-22:00");
+        return;
+    }
+
     const data = {
         userId: currentUser.id,
-        startTime: selectedSlot.startStr,
-        endTime: selectedSlot.endStr,
+        slotNumber: slotNumber,
+        gender: document.querySelector('input[name="gender"]:checked').value,
+        bringOwnFood: document.getElementById("bringOwnFood").checked,
+        decorations: document.getElementById("decorationStyle").value,
+        music: document.getElementById("musicType").value
     };
 
     try {
@@ -72,6 +120,7 @@ async function makeReservation() {
         loadUserReservations();
     } catch (error) {
         console.error("Failed to make reservation", error);
+        alert("Failed to make reservation: " + (error.response?.data?.message || error.message));
     }
 }
 
@@ -98,7 +147,25 @@ function renderUserReservations(reservations) {
         const div = document.createElement("div");
         div.className = "p-2 border rounded mb-2 flex justify-between items-center";
 
-        const time = `${res.startTime.slice(0, 16).replace("T", " ")} → ${res.endTime.slice(0, 16).replace("T", " ")}`;
+        // Convert slot number to time range
+        let timeRange;
+        switch(res.slotNumber) {
+            case 0:
+                timeRange = "8:00 - 12:00";
+                break;
+            case 1:
+                timeRange = "13:00 - 17:00";
+                break;
+            case 2:
+                timeRange = "18:00 - 22:00";
+                break;
+            default:
+                timeRange = "Unknown time";
+        }
+
+        const formattedDate = new Date(res.date).toLocaleDateString();
+        const time = `${formattedDate} (${timeRange})`;
+
         div.innerHTML = `
             <span>${time}</span>
             <button class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"
@@ -125,12 +192,41 @@ async function loadUserReservations() {
 async function loadEvents(start, end) {
     try {
         const response = await axios.get(`${API_BASE_URL}/reservations`);
-        const events = response.data.map(res => ({
-            title: `Reserved by ${res.user.username}`,
-            start: res.startTime,
-            end: res.endTime,
-            color: "red",
-        }));
+        const events = response.data.map(res => {
+            // Convert slot number to start and end times
+            let startHour, endHour;
+            switch(res.slotNumber) {
+                case 0:
+                    startHour = 8;
+                    endHour = 12;
+                    break;
+                case 1:
+                    startHour = 13;
+                    endHour = 17;
+                    break;
+                case 2:
+                    startHour = 18;
+                    endHour = 22;
+                    break;
+                default:
+                    startHour = 0;
+                    endHour = 0;
+            }
+
+            // Create Date objects for the start and end times
+            const startDate = new Date(res.date);
+            startDate.setHours(startHour, 0, 0);
+
+            const endDate = new Date(res.date);
+            endDate.setHours(endHour, 0, 0);
+
+            return {
+                title: `Reserved by ${res.userName}`,
+                start: startDate.toISOString(),
+                end: endDate.toISOString(),
+                color: "red",
+            };
+        });
 
         calendar.removeAllEvents();
         calendar.addEventSource(events);
@@ -172,10 +268,17 @@ document.addEventListener("DOMContentLoaded", function () {
     fetchUserInfo();
 
     // Event handlers
-    document.getElementById("confirm-reservation-btn").addEventListener("click", makeReservation);
-    document.getElementById("close-modal-btn").addEventListener("click", closeReservationModal);
-    document.getElementById("logout-btn").addEventListener("click", () => {
-        //axios.post(`${API_BASE_URL}/logout`).then(() => location.reload());
+    document.getElementById("confirmBooking").addEventListener("click", function(e) {
+        e.preventDefault();
+        makeReservation();
+    });
+    document.getElementById("cancelBooking").addEventListener("click", function(e) {
+        e.preventDefault();
+        closeReservationModal();
+    });
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+        localStorage.removeItem('user');
+        location.reload();
     });
 });
 })();

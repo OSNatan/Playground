@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,17 +36,23 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     @Transactional
     public Reservation createReservation(ReservationRequestDTO requestDTO) {
+        // Get current date - in a real application, this might be passed in the request
+        LocalDate currentDate = LocalDate.now();
 
         User user = userRepository.findById(requestDTO.getUserId())
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        if (isSlotBooked( requestedStartTime)) {
+        // Check if the slot is already booked
+        if (isSlotBooked(currentDate, requestDTO.getSlotNumber())) {
             throw new IllegalStateException("The requested time slot is already booked");
         }
 
+        // Create a new slot
         Slot slot = new Slot();
-        slot.setSlotNumber();
+        slot.setDate(currentDate);
+        slot.setSlotNumber(requestDTO.getSlotNumber());
 
+        // Create a new reservation
         Reservation reservation = new Reservation();
         reservation.setUser(user);
         reservation.setGender(requestDTO.getGender());
@@ -55,9 +60,11 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setDecorationStyle(requestDTO.getDecorations());
         reservation.setMusicType(requestDTO.getMusic());
 
+        // Link reservation and slot
         reservation.setSlot(slot);
         slot.setReservation(reservation);
 
+        // Save the reservation (will cascade to slot)
         return reservationRepository.save(reservation);
     }
 
@@ -102,9 +109,9 @@ public class ReservationServiceImpl implements ReservationService {
         for (Slot bookedSlot : bookedSlots) {
             allPossibleSlots.removeIf(slot -> 
                 slot.getDate().equals(bookedSlot.getDate()) && 
-                slot.getStartTime().equals(bookedSlot.getStartTime()));
+                slot.getSlotNumber().equals(bookedSlot.getSlotNumber()));
         }
-        
+
         return allPossibleSlots;
     }
 
@@ -112,7 +119,7 @@ public class ReservationServiceImpl implements ReservationService {
     public List<SlotDTO> getBookedSlots(LocalDate startDate, LocalDate endDate) {
 
         List<Slot> bookedSlots = slotRepository.findByDateBetween(startDate, endDate);
-        
+
         return bookedSlots.stream()
             .map(slot -> new SlotDTO(
                 slot.getId(),
@@ -124,44 +131,40 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     /**
-     * Normalizes any time to the nearest valid slot start time (8:00, 12:00, or 16:00)
+     * Converts hour to slot number:
+     * 0: 8-12 (morning)
+     * 1: 13-17 (afternoon)
+     * 2: 18-22 (evening)
      */
-    private LocalTime normalizeToSlotStart(LocalTime requestedTime) {
-        int hour = requestedTime.getHour();
-
-        if (hour < 12) return LocalTime.of(8, 0);
-        if (hour < 16) return LocalTime.of(12, 0);
-        return LocalTime.of(16, 0);
+    private Integer timeToSlotNumber(int hour) {
+        if (hour >= 8 && hour < 12) return 0;  // Morning slot
+        if (hour >= 13 && hour < 17) return 1; // Afternoon slot
+        if (hour >= 18 && hour < 22) return 2; // Evening slot
+        return -1; // Invalid time
     }
 
     /**
-     * Checks if a slot is already booked for the given date and start time
+     * Checks if a slot is already booked for the given date and slot number
      */
-    private boolean isSlotBooked(LocalTime startTime) {
-
-        return slotRepository.existsByDateAndStartTime(startTime);
+    private boolean isSlotBooked(LocalDate date, Integer slotNumber) {
+        return slotRepository.existsByDateAndSlotNumber(date, slotNumber);
     }
 
     private List<SlotDTO> generateAllPossibleSlots(LocalDate startDate, LocalDate endDate) {
         List<SlotDTO> slots = new ArrayList<>();
-        LocalTime[] slotTimes = {
-            LocalTime.of(8, 0),
-            LocalTime.of(12, 0),
-            LocalTime.of(16, 0)
-        };
-        
+        Integer[] slotNumbers = {0, 1, 2}; // 0: 8-12, 1: 13-17, 2: 18-22
+
         for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
-            for (LocalTime startTime : slotTimes) {
+            for (Integer slotNumber : slotNumbers) {
                 slots.add(new SlotDTO(
-                    null, // slot imaginar
+                    null, // No ID as these are virtual slots
                     date,
-                    startTime,
-                    startTime.plusHours(4),
-                    true
+                    slotNumber,
+                    true // Available
                 ));
             }
         }
-        
+
         return slots;
     }
 }
