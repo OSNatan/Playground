@@ -1,46 +1,355 @@
-/* Additional styles beyond Tailwind CSS */
-
-/* FullCalendar Customizations */
-#calendar {
-    min-height: 500px; /* Ensure calendar has enough height */
-    margin-bottom: 20px;
-    height: 600px !important; /* Force height to ensure visibility */
-    background-color: #fff;
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-.fc-event {
+body {
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f0f4f8;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    margin-bottom: 0.5em;
+    color: #5a2c82;
+    font-weight: bold;
+}
+
+h1 {
+    font-size: 2rem;
+}
+
+h2 {
+    font-size: 1.75rem;
+}
+
+h3 {
+    font-size: 1.5rem;
+}
+
+p {
+    margin-bottom: 1rem;
+}
+
+a {
+    color: #5a2c82;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+a:hover {
+    color: #7c3aed;
+}
+
+/* Navigation */
+nav {
+    background-color: #5a2c82;
+    color: white;
+    padding: 1rem 0;
+}
+
+nav .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+nav h1 {
+    color: white;
+    margin: 0;
+}
+
+nav a {
+    color: white;
+    margin-left: 1rem;
+}
+
+nav a:hover {
+    color: #e0e0e0;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+}
+
+.button {
+    display: inline-block;
+    background-color: #7c3aed;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    border: none;
     cursor: pointer;
-    padding: 2px;
+    transition: background-color 0.3s;
+}
+
+.button:hover {
+    background-color: #6d28d9;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Card Styles */
+.card {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* List Styles */
+ul {
+    list-style-type: disc;
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Form Styles */
+input, select, textarea {
+    width: 100%;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
     border-radius: 4px;
 }
 
-.fc-event-available {
-    background-color: rgba(74, 222, 128, 0.2) !important; /* light green */
-    border-color: rgb(34, 197, 94) !important;
-    color: rgb(22, 101, 52) !important;
-}
-
-.fc-event-booked {
-    background-color: rgba(252, 165, 165, 0.2) !important; /* light red */
-    border-color: rgb(239, 68, 68) !important;
-    color: rgb(153, 27, 27) !important;
-}
-
-.fc-daygrid-day.fc-day-today {
-    background-color: rgba(147, 51, 234, 0.1) !important;
-}
-
-/* Form element styling */
-input:focus, select:focus {
-    outline: 2px solid rgba(147, 51, 234, 0.5);
+input:focus, select:focus, textarea:focus {
+    outline: 2px solid rgba(124, 58, 237, 0.5);
     outline-offset: -1px;
 }
 
-/* Hover effects */
-.hover-scale {
-    transition: transform 0.2s;
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
 }
 
-.hover-scale:hover {
-    transform: scale(1.02);
+/* Calendar Styles */
+#calendar {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    min-height: 500px;
+}
+
+.calendar-container {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    margin-bottom: 1rem;
+}
+
+.calendar-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    margin-bottom: 0.5rem;
+    text-align: center;
+    font-weight: bold;
+}
+
+.calendar-day {
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 0.5rem;
+    min-height: 100px;
+    position: relative;
+}
+
+.calendar-day.today {
+    background-color: rgba(124, 58, 237, 0.1);
+}
+
+.calendar-day-number {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.calendar-event {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.calendar-event.available {
+    background-color: rgba(74, 222, 128, 0.2);
+    border: 1px solid rgb(34, 197, 94);
+    color: rgb(22, 101, 52);
+}
+
+.calendar-event.booked {
+    background-color: rgba(252, 165, 165, 0.2);
+    border: 1px solid rgb(239, 68, 68);
+    color: rgb(153, 27, 27);
+}
+
+/* Reservation Form */
+.reservation-form {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1.5rem;
+}
+
+/* Footer */
+footer {
+    background-color: #4a1d6a;
+    color: white;
+    padding: 1.5rem 0;
+    margin-top: 2rem;
+    text-align: center;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .grid-cols-2 {
+        grid-template-columns: 1fr;
+    }
+
+    .calendar-container {
+        grid-template-columns: repeat(7, 1fr);
+        font-size: 0.875rem;
+    }
+
+    .calendar-day {
+        padding: 0.25rem;
+        min-height: 80px;
+    }
+
+    .calendar-event {
+        padding: 0.125rem 0.25rem;
+        font-size: 0.75rem;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    h2 {
+        font-size: 1.25rem;
+    }
+
+    h3 {
+        font-size: 1.125rem;
+    }
+
+    .button {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    .calendar-header {
+        font-size: 0.75rem;
+    }
+
+    .calendar-controls h3 {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .calendar-container {
+        gap: 2px;
+    }
+
+    .calendar-header {
+        gap: 2px;
+    }
+
+    .calendar-day {
+        min-height: 60px;
+    }
+
+    .calendar-event {
+        margin-bottom: 0.125rem;
+    }
+}
+
+@media (max-width: 480px) {
+    nav .container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .nav-links {
+        margin-top: 1rem;
+    }
+
+    nav a {
+        margin-left: 0;
+        margin-right: 1rem;
+    }
+
+    .container {
+        padding: 0 10px;
+    }
+
+    .card {
+        padding: 1rem;
+    }
+
+    .calendar-day-number {
+        margin-bottom: 0.25rem;
+    }
+
+    .calendar-header div {
+        padding: 0.25rem 0;
+    }
+
+    .form-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-actions button {
+        width: 100%;
+    }
+}
+
+/* Print styles */
+@media print {
+    nav, footer, .button, form {
+        display: none;
+    }
+
+    body {
+        background-color: white;
+        color: black;
+    }
+
+    .card {
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
 }
