@@ -1,5 +1,4 @@
 // calendar.js - Custom calendar implementation with vanilla JavaScript
-const API_BASE_URL = "http://localhost:8080/api";
 
 // Global variables
 let currentDate = new Date();
@@ -139,7 +138,7 @@ async function fetchUserInfo() {
     try {
         const user = getLoggedInUser();
         if (user && user.token) {
-            const response = await axios.get(`${API_BASE_URL}/users/me`);
+            const response = await axios.get(`${window.API_BASE_URL}/users/me`);
             currentUser = response.data;
             updateUserUI();
             loadUserReservations();
@@ -404,23 +403,60 @@ async function makeReservation() {
         return;
     }
 
+    // Log authentication status
+    const user = getLoggedInUser();
+    console.log("Current user from localStorage:", user);
+    console.log("Current user from currentUser variable:", currentUser);
+
+    if (!user) {
+        alert("You must be logged in to make a reservation. Please log in and try again.");
+        return;
+    }
+
+    // Check if token exists
+    const token = user.token || user.accessToken || user.jwt;
+    if (!token) {
+        console.error("No authentication token found in user object:", user);
+        alert("Authentication error: No token found. Please log out and log in again.");
+        return;
+    }
+
     const data = {
         date: selectedDate,
         slotNumber: parseInt(selectedSlotNumber),
-        gender: document.querySelector('input[name="gender"]:checked').value === "true",
+        gender: document.querySelector('input[name="gender"]:checked').value,
         bringOwnFood: document.getElementById("bringOwnFood").checked,
-        decorationStyle: document.getElementById("decorationStyle").value,
-        musicType: document.getElementById("musicType").value
+        decorations: document.getElementById("decorationStyle").value,  // Changed from decorationStyle
+        music: document.getElementById("musicType").value               // Changed from musicType
     };
 
+    console.log("Making reservation with data:", data);
+
     try {
-        await axios.post(`${API_BASE_URL}/reservations`, data);
+        // Add explicit headers for this request
+        const config = {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        };
+        console.log("Request config:", config);
+
+        const response = await axios.post(`${window.API_BASE_URL}/reservations`, data, config);
+        console.log("Reservation successful:", response);
+
         closeReservationModal();
         loadReservations();
         loadUserReservations();
         alert("Reservation successful!");
     } catch (error) {
         console.error("Failed to make reservation", error);
+        console.error("Error details:", {
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            headers: error.response?.headers
+        });
         alert("Failed to make reservation: " + (error.response?.data || error.message));
     }
 }
@@ -444,7 +480,7 @@ async function loadReservations() {
 
         // Fetch reservations for the date range
         // Using a simple approach without date filtering for now
-        const response = await axios.get(`${API_BASE_URL}/reservations`);
+        const response = await axios.get(`${window.API_BASE_URL}/reservations`);
         console.log("Reservations response:", response.data);
         reservations = response.data;
 
@@ -560,7 +596,7 @@ async function loadUserReservations() {
     try {
         console.log(`Loading reservations for user ID: ${currentUser.id}`);
 
-        const response = await axios.get(`${API_BASE_URL}/reservations/user/${currentUser.id}`);
+        const response = await axios.get(`${window.API_BASE_URL}/reservations/user/${currentUser.id}`);
         const userReservations = response.data;
 
         console.log(`Received ${userReservations ? userReservations.length : 0} user reservations`);
@@ -657,7 +693,7 @@ async function cancelCalendarReservation(id) {
     try {
         console.log(`Cancelling reservation with ID: ${id}`);
 
-        const response = await axios.delete(`${API_BASE_URL}/reservations/${id}`);
+        const response = await axios.delete(`${window.API_BASE_URL}/reservations/${id}`);
         console.log("Cancellation response:", response);
 
         // Reload data

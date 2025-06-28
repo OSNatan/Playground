@@ -1,12 +1,19 @@
 // auth.js - Authentication and user management
-//const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = 'http://localhost:8080/api';
 
 // Set up axios interceptor to add the JWT token to all requests
 axios.interceptors.request.use(
     config => {
         const user = getLoggedInUser();
-        if (user && user.token) {
-            config.headers.Authorization = `Bearer ${user.token}`;
+        if (user) {
+            // Check for token in different possible locations
+            const token = user.token || user.accessToken || user.jwt;
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+                console.log("Added Authorization header:", config.headers.Authorization);
+            } else {
+                console.warn("User found but no token available:", user);
+            }
         }
         return config;
     },
@@ -367,5 +374,7 @@ function formatTime(time) {
     return time.substring(0, 5);
 }
 
-// Make cancelReservation function globally available
+// Make functions and variables globally available
 window.cancelReservation = cancelReservation;
+window.getLoggedInUser = getLoggedInUser;
+window.API_BASE_URL = API_BASE_URL;

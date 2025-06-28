@@ -54,7 +54,7 @@ function loadUserReservations() {
 
     if (!container) return;
 
-    axios.get(`http://localhost:8080/api/reservations/user/${user.id}`)
+    axios.get(`${API_BASE_URL}/reservations/user/${user.id}`)
         .then(response => {
             const reservations = response.data;
 
@@ -117,7 +117,7 @@ function loadUserReservations() {
 function cancelReservation(id) {
     if (!confirm('Are you sure you want to cancel this reservation?')) return;
 
-    axios.delete(`http://localhost:8080/api/reservations/${id}`)
+    axios.delete(`${API_BASE_URL}/reservations/${id}`)
         .then(() => {
             alert('Reservation cancelled successfully');
             loadUserReservations();
