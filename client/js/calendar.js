@@ -664,7 +664,7 @@ async function loadUserReservations() {
         } else {
             if (noReservationsMsg) {
                 noReservationsMsg.style.display = "block";
-            }
+            }container.innerHTML = "";
         }
     } catch (error) {
         console.error("Failed to load user reservations", error);

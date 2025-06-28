@@ -25,7 +25,7 @@ public class Reservation {
     @JsonBackReference
     private User user;
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST, orphanRemoval = true)
     @JoinColumn(name = "slot_id", unique = true)
     @JsonBackReference
     private Slot slot;
