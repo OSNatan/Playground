@@ -71,17 +71,26 @@ document.addEventListener('DOMContentLoaded', function() {
 // Add user info to navigation
 function addUserInfoToNav() {
     const user = getLoggedInUser();
+    const navContainer = document.querySelector('nav .container');
     const navLinks = document.getElementById('navLinks');
     const loginLink = document.getElementById('loginLink');
 
-    if (user && navLinks && loginLink) {
+    if (user && navContainer && navLinks) {
         // Add user info to navigation if not already present
-        if (!document.getElementById('user-info')) {
-            const userInfo = document.createElement('span');
-            userInfo.id = 'user-info';
-            userInfo.style.marginRight = '1rem';
-            userInfo.innerHTML = `<strong>${user.username}</strong> Reservations`;
-            navLinks.insertBefore(userInfo, loginLink);
+        if (!document.getElementById('welcome-message')) {
+            // Create welcome message in the middle
+            const welcomeMessage = document.createElement('span');
+            welcomeMessage.id = 'welcome-message';
+            welcomeMessage.style.color = 'white';
+            welcomeMessage.innerHTML = `Welcome, <strong>${user.username}</strong>`;
+
+            // Insert it in the middle of the navbar
+            navContainer.insertBefore(welcomeMessage, navLinks);
+
+            // Center the welcome message
+            navContainer.style.justifyContent = 'space-between';
+            welcomeMessage.style.flexGrow = '1';
+            welcomeMessage.style.textAlign = 'center';
         }
     }
 }
@@ -89,15 +98,32 @@ function addUserInfoToNav() {
 // Update navigation based on auth state
 function updateNavigation() {
     const user = getLoggedInUser();
+    const navContainer = document.querySelector('nav .container');
     const logoutBtn = document.getElementById('logoutBtn');
     const loginLink = document.getElementById('loginLink');
 
     if (user) {
+        // Show logout button and hide login link
         if (logoutBtn) logoutBtn.classList.remove('hidden');
         if (loginLink) loginLink.style.display = 'none';
+
+        // Add welcome message if not already present
+        addUserInfoToNav();
     } else {
+        // Hide logout button and show login link
         if (logoutBtn) logoutBtn.classList.add('hidden');
         if (loginLink) loginLink.style.display = 'inline-block';
+
+        // Remove welcome message if it exists
+        const welcomeMessage = document.getElementById('welcome-message');
+        if (welcomeMessage) {
+            welcomeMessage.remove();
+        }
+
+        // Reset navbar container style
+        if (navContainer) {
+            navContainer.style.justifyContent = 'space-between';
+        }
     }
 }
 
