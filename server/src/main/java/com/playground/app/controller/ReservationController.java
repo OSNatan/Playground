@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -27,9 +28,11 @@ public class ReservationController {
 
     @PostMapping
     public ResponseEntity<ReservationResponseDTO> createReservation(
-             @Valid @RequestBody ReservationRequestDTO reservationRequestDTO) {
-        
-        Reservation reservation = reservationService.createReservation(reservationRequestDTO);
+             @Valid @RequestBody ReservationRequestDTO reservationRequestDTO,
+             Authentication authentication) {
+
+        String username = authentication.getName();
+        Reservation reservation = reservationService.createReservation(reservationRequestDTO, username);
         return new ResponseEntity<>(convertToResponseDTO(reservation), HttpStatus.CREATED);
     }
 

@@ -13,8 +13,8 @@ public class ReservationResponseDTO {
     private Long id;
     private Long userId;
     private String userName;
-    private LocalDate date;
     private Integer slotNumber;
+    private LocalDate date;
     private Gender gender;
     private boolean bringOwnFood;
     private String decorationStyle;

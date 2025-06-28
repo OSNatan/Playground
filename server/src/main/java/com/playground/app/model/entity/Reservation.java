@@ -1,5 +1,6 @@
 package com.playground.app.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,10 +22,12 @@ public class Reservation {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @JsonBackReference
     private User user;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "slot_id", unique = true)
+    @JsonBackReference
     private Slot slot;
 
     @Column(name = "gender")
@@ -38,6 +41,7 @@ public class Reservation {
     private String decorationStyle;
 
     @Column(name = "bring_own_food")
+    @JsonBackReference
     private boolean bringOwnFood;
 
     @Column

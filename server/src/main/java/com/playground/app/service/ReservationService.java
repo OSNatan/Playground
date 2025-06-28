@@ -8,7 +8,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface ReservationService {
-    Reservation createReservation(ReservationRequestDTO reservationRequestDTO);
+    Reservation createReservation(ReservationRequestDTO reservationRequestDTO, String username);
     List<Reservation> getAllReservations();
     Reservation getReservationById(Long id);
     List<Reservation> getReservationsByUserId(Long userId);

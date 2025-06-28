@@ -1,5 +1,6 @@
 package com.playground.app.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,5 +27,6 @@ public class Slot {
     private Integer slotNumber;
 
     @OneToOne(mappedBy = "slot")
+    @JsonManagedReference
     private Reservation reservation;
 }

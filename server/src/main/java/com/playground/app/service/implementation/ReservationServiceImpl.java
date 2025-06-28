@@ -35,38 +35,41 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     @Transactional
-    public Reservation createReservation(ReservationRequestDTO requestDTO) {
-        // Get current date - in a real application, this might be passed in the request
-        LocalDate currentDate = LocalDate.now();
+    public Reservation createReservation(ReservationRequestDTO requestDTO, String username) {
+        LocalDate requestedDate = requestDTO.getDate(); // 📅 Data primită de la client
 
-        User user = userRepository.findById(requestDTO.getUserId())
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        // Verifică dacă data este validă (opțional)
+        if (requestedDate.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("Reservation date cannot be in the past");
+        }
 
-        // Check if the slot is already booked
-        if (isSlotBooked(currentDate, requestDTO.getSlotNumber())) {
+        // Obții userul din username
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Verifici dacă slotul e deja ocupat
+        if (isSlotBooked(requestedDate, requestDTO.getSlotNumber())) {
             throw new IllegalStateException("The requested time slot is already booked");
         }
 
-        // Create a new slot
+        // Creezi slotul
         Slot slot = new Slot();
-        slot.setDate(currentDate);
+        slot.setDate(requestedDate);
         slot.setSlotNumber(requestDTO.getSlotNumber());
 
-        // Create a new reservation
+        // Creezi rezervarea
         Reservation reservation = new Reservation();
         reservation.setUser(user);
         reservation.setGender(requestDTO.getGender());
         reservation.setBringOwnFood(requestDTO.isBringOwnFood());
         reservation.setDecorationStyle(requestDTO.getDecorations());
         reservation.setMusicType(requestDTO.getMusic());
-
-        // Link reservation and slot
         reservation.setSlot(slot);
         slot.setReservation(reservation);
 
-        // Save the reservation (will cascade to slot)
         return reservationRepository.save(reservation);
     }
+
 
     @Override
     public List<Reservation> getAllReservations() {
