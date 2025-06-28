@@ -1,5 +1,5 @@
 // auth.js - Authentication and user management
-const API_BASE_URL = 'http://localhost:8080/api';
+//const API_BASE_URL = 'http://localhost:8080/api';
 
 // Set up axios interceptor to add the JWT token to all requests
 axios.interceptors.request.use(
@@ -82,7 +82,7 @@ function addUserInfoToNav() {
             const welcomeMessage = document.createElement('span');
             welcomeMessage.id = 'welcome-message';
             welcomeMessage.style.color = 'white';
-            welcomeMessage.innerHTML = `Welcome, <strong>${user.username}</strong>`;
+            welcomeMessage.innerHTML = `Welcome, <strong>${user.username}</strong>!`;
 
             // Insert it in the middle of the navbar
             navContainer.insertBefore(welcomeMessage, navLinks);

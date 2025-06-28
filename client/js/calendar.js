@@ -87,10 +87,22 @@ document.addEventListener("DOMContentLoaded", function() {
         // Set up a check to ensure calendar is rendered after a short delay
         setTimeout(checkAndRenderCalendar, 1000);
 
+        // Set up periodic checks to ensure calendar is rendered
+        setInterval(checkAndRenderCalendar, 5000);
+
         // Add a visibility change listener to re-render calendar if needed when tab becomes visible
         document.addEventListener('visibilitychange', function() {
             if (document.visibilityState === 'visible') {
                 console.log("Page became visible, checking calendar...");
+                checkAndRenderCalendar();
+            }
+        });
+
+        // Add a scroll event listener to check if calendar is in view
+        window.addEventListener('scroll', function() {
+            const calendarElement = document.getElementById('calendar');
+            if (calendarElement && isElementInViewport(calendarElement)) {
+                console.log("Calendar is in viewport, checking if it needs to be rendered...");
                 checkAndRenderCalendar();
             }
         });
@@ -110,6 +122,17 @@ document.addEventListener("DOMContentLoaded", function() {
         }, 2000);
     }
 });
+
+// Check if an element is in the viewport
+function isElementInViewport(el) {
+    const rect = el.getBoundingClientRect();
+    return (
+        rect.top >= 0 &&
+        rect.left >= 0 &&
+        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+    );
+}
 
 // Fetch the current user's information
 async function fetchUserInfo() {
@@ -178,173 +201,169 @@ function handleLogout() {
     location.reload();
 }
 
-// Render the calendar for the current month
+// Render the calendar for the current month - Simplified approach
 function renderCalendar() {
     try {
-        console.log("Rendering calendar with simplified approach...");
+        console.clear(); // Clear console for better debugging
+        console.log("%c CALENDAR RENDERING STARTED ", "background: #5a2c82; color: white; padding: 4px; border-radius: 4px;");
+
+        // Get current year and month
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
-
-        // Update the month and year display
         const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        // Update month display
         const currentMonthElement = document.getElementById("currentMonth");
-        if (!currentMonthElement) {
-            console.error("Element with ID 'currentMonth' not found");
-            return;
+        if (currentMonthElement) {
+            currentMonthElement.textContent = `${monthNames[month]} ${year}`;
+            console.log(`Set month display to: ${monthNames[month]} ${year}`);
+        } else {
+            console.error("Month display element not found");
         }
-        currentMonthElement.textContent = `${monthNames[month]} ${year}`;
 
-        // Get the first day of the month
-        const firstDay = new Date(year, month, 1);
-        const startingDay = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
-
-        // Get the number of days in the month
-        const lastDay = new Date(year, month + 1, 0);
-        const totalDays = lastDay.getDate();
-
-        // Clear the calendar
+        // Get calendar container
         const calendarDays = document.getElementById("calendarDays");
         if (!calendarDays) {
-            console.error("Element with ID 'calendarDays' not found");
+            console.error("Calendar container not found");
             return;
         }
 
-        // Clear existing content
+        // Clear any existing content
         calendarDays.innerHTML = "";
+        console.log("Cleared calendar container");
 
-        console.log(`Rendering calendar for ${monthNames[month]} ${year} with ${totalDays} days`);
+        // Explicitly set grid layout styles
+        calendarDays.style.display = "grid";
+        calendarDays.style.gridTemplateColumns = "repeat(7, 1fr)";
+        calendarDays.style.gap = "8px";
+        calendarDays.style.width = "100%";
+        calendarDays.style.minHeight = "600px";
+        console.log("Applied grid layout styles to calendar container");
+
+        // Calculate days in month and first day of month
+        const firstDay = new Date(year, month, 1);
+        const startingDay = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const lastDay = new Date(year, month + 1, 0);
+        const totalDays = lastDay.getDate();
+        console.log(`Month has ${totalDays} days, starting on day ${startingDay} of week`);
+
+        // Create a direct HTML string for better performance
+        let calendarHTML = '';
 
         // Add empty cells for days before the first day of the month
         for (let i = 0; i < startingDay; i++) {
-            const emptyCell = document.createElement("div");
-            emptyCell.className = "calendar-day empty-day";
-            calendarDays.appendChild(emptyCell);
-            console.log(`Added empty cell ${i+1}/${startingDay}`);
+            calendarHTML += `<div class="calendar-day" style="background-color: #f8f9fa; border: 1px dashed #e0e0e0; border-radius: 4px; min-height: 120px;"></div>`;
         }
+        console.log(`Added ${startingDay} empty cells`);
+
+        // Get current date for highlighting today
+        const currentDateObj = new Date();
+        const isCurrentMonth = (year === currentDateObj.getFullYear() && month === currentDateObj.getMonth());
+        const today = currentDateObj.getDate();
 
         // Add cells for each day of the month
         for (let day = 1; day <= totalDays; day++) {
-            const cell = document.createElement("div");
-            cell.className = "calendar-day";
-            cell.style.border = "1px solid #ddd";
-            cell.style.padding = "8px";
-            cell.style.minHeight = "120px";
-            cell.style.backgroundColor = "#fff";
-
             // Check if this is today
-            const currentDateObj = new Date();
-            if (year === currentDateObj.getFullYear() && month === currentDateObj.getMonth() && day === currentDateObj.getDate()) {
-                cell.classList.add("today");
-                cell.style.backgroundColor = "rgba(124, 58, 237, 0.1)";
-            }
+            const isToday = isCurrentMonth && day === today;
+            const todayClass = isToday ? 'today' : '';
+            const todayStyle = isToday ? 'background-color: rgba(124, 58, 237, 0.1); border: 2px solid rgba(124, 58, 237, 0.5);' : '';
 
-            // Add the day number
-            const dayNumber = document.createElement("div");
-            dayNumber.className = "calendar-day-number";
-            dayNumber.textContent = day;
-            dayNumber.style.fontWeight = "bold";
-            dayNumber.style.marginBottom = "8px";
-            cell.appendChild(dayNumber);
-
-            // Add the time slots (8-12, 13-17, 18-22)
+            // Format the date string for the slots
             const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            console.log(`Creating slots for ${dateString}`);
 
-            // Morning slot (8-12)
-            const morningSlot = createTimeSlot(dateString, 0, "8:00 - 12:00");
-            cell.appendChild(morningSlot);
+            // Create the day cell with its slots
+            calendarHTML += `
+                <div class="calendar-day ${todayClass}" style="border: 1px solid #ddd; padding: 8px; min-height: 120px; background-color: #fff; border-radius: 4px; ${todayStyle}">
+                    <div class="calendar-day-number" style="font-weight: bold; margin-bottom: 8px; font-size: 1.1rem; color: #5a2c82;">${day}</div>
 
-            // Afternoon slot (13-17)
-            const afternoonSlot = createTimeSlot(dateString, 1, "13:00 - 17:00");
-            cell.appendChild(afternoonSlot);
+                    <!-- Morning slot (8-12) -->
+                    <div class="calendar-event available" 
+                         data-date="${dateString}" 
+                         data-slot-number="0" 
+                         style="background-color: rgba(74, 222, 128, 0.2); border: 1px solid rgb(34, 197, 94); color: rgb(22, 101, 52); padding: 8px; border-radius: 4px; margin-bottom: 8px; cursor: pointer; text-align: center; font-weight: 500; display: block; width: 100%;">
+                        8:00 - 12:00
+                    </div>
 
-            // Evening slot (18-22)
-            const eveningSlot = createTimeSlot(dateString, 2, "18:00 - 22:00");
-            cell.appendChild(eveningSlot);
+                    <!-- Afternoon slot (13-17) -->
+                    <div class="calendar-event available" 
+                         data-date="${dateString}" 
+                         data-slot-number="1" 
+                         style="background-color: rgba(74, 222, 128, 0.2); border: 1px solid rgb(34, 197, 94); color: rgb(22, 101, 52); padding: 8px; border-radius: 4px; margin-bottom: 8px; cursor: pointer; text-align: center; font-weight: 500; display: block; width: 100%;">
+                        13:00 - 17:00
+                    </div>
 
-            calendarDays.appendChild(cell);
-            console.log(`Added day ${day} cell with 3 time slots`);
+                    <!-- Evening slot (18-22) -->
+                    <div class="calendar-event available" 
+                         data-date="${dateString}" 
+                         data-slot-number="2" 
+                         style="background-color: rgba(74, 222, 128, 0.2); border: 1px solid rgb(34, 197, 94); color: rgb(22, 101, 52); padding: 8px; border-radius: 4px; margin-bottom: 8px; cursor: pointer; text-align: center; font-weight: 500; display: block; width: 100%;">
+                        18:00 - 22:00
+                    </div>
+                </div>
+            `;
         }
+        console.log(`Added ${totalDays} day cells with time slots`);
 
-        // Load reservations for the current month
+        // Log the HTML string for debugging (truncated for readability)
+        console.log("Calendar HTML string (first 100 chars):", calendarHTML.substring(0, 100) + "...");
+
+        // Set the HTML content
+        calendarDays.innerHTML = calendarHTML;
+        console.log("Calendar HTML has been set");
+
+        // Force a reflow to ensure the browser renders the calendar
+        void calendarDays.offsetHeight;
+
+        // Add event listeners to all slots
+        const slots = calendarDays.querySelectorAll(".calendar-event");
+        slots.forEach(slot => {
+            slot.addEventListener("click", function() {
+                const date = this.dataset.date;
+                const slotNumber = parseInt(this.dataset.slotNumber);
+                const timeText = this.textContent.trim();
+
+                console.log(`Slot clicked: date=${date}, slotNumber=${slotNumber}, timeText=${timeText}`);
+
+                if (!currentUser) {
+                    alert("Please log in to make a reservation.");
+                    return;
+                }
+
+                if (slot.classList.contains("booked")) {
+                    alert("This slot is already booked.");
+                    return;
+                }
+
+                showReservationModal(date, slotNumber, timeText);
+            });
+        });
+        console.log(`Added click listeners to ${slots.length} time slots`);
+
+        // Load reservations to mark booked slots
         loadReservations();
+        console.log("Calendar rendering complete, loading reservations...");
+
     } catch (error) {
         console.error("Error rendering calendar:", error);
+        console.error("Error stack:", error.stack);
 
         // Display error message in the calendar container
         const calendarDays = document.getElementById("calendarDays");
         if (calendarDays) {
             calendarDays.innerHTML = `
-                <div style="padding: 20px; text-align: center; color: #e53e3e;">
+                <div style="padding: 20px; text-align: center; color: #e53e3e; grid-column: span 7;">
                     <p>Error rendering calendar: ${error.message}</p>
                     <p>Please try refreshing the page.</p>
+                    <p>Technical details: ${error.stack ? error.stack.split('\n')[0] : 'No stack trace available'}</p>
                 </div>
             `;
         }
     }
 }
 
-// Create a time slot element
-function createTimeSlot(date, slotNumber, timeText) {
-    try {
-        console.log(`Creating time slot for date=${date}, slotNumber=${slotNumber}, timeText=${timeText}`);
-
-        const slot = document.createElement("div");
-        slot.className = "calendar-event available";
-        slot.textContent = timeText;
-        slot.dataset.date = date;
-        slot.dataset.slotNumber = slotNumber;
-
-        // Add inline styles to ensure visibility
-        slot.style.backgroundColor = "rgba(74, 222, 128, 0.2)";
-        slot.style.border = "1px solid rgb(34, 197, 94)";
-        slot.style.color = "rgb(22, 101, 52)";
-        slot.style.padding = "8px";
-        slot.style.borderRadius = "4px";
-        slot.style.marginBottom = "8px";
-        slot.style.cursor = "pointer";
-        slot.style.textAlign = "center";
-        slot.style.fontWeight = "500";
-
-        // Add click event to book the slot
-        slot.addEventListener("click", function() {
-            console.log(`Slot clicked: date=${date}, slotNumber=${slotNumber}`);
-
-            if (!currentUser) {
-                alert("Please log in to make a reservation.");
-                return;
-            }
-
-            // Check if the slot is already booked
-            if (slot.classList.contains("booked")) {
-                alert("This slot is already booked.");
-                return;
-            }
-
-            // Show the reservation form
-            showReservationModal(date, slotNumber, timeText);
-        });
-
-        console.log(`Time slot created successfully`);
-        return slot;
-    } catch (error) {
-        console.error(`Error creating time slot: ${error.message}`);
-
-        // Create a fallback slot with error indication
-        const errorSlot = document.createElement("div");
-        errorSlot.className = "calendar-event";
-        errorSlot.textContent = timeText + " (Error)";
-        errorSlot.style.backgroundColor = "#fee2e2";
-        errorSlot.style.border = "1px solid #ef4444";
-        errorSlot.style.color = "#b91c1c";
-        errorSlot.style.padding = "8px";
-        errorSlot.style.borderRadius = "4px";
-        errorSlot.style.marginBottom = "8px";
-        errorSlot.style.textAlign = "center";
-
-        return errorSlot;
-    }
-}
+// Note: The createTimeSlot function has been removed as it's no longer needed.
+// Time slots are now created directly in the renderCalendar function using HTML strings
+// for better performance and reliability.
 
 // Show the reservation modal
 function showReservationModal(date, slotNumber, timeText) {
@@ -439,44 +458,30 @@ async function loadReservations() {
     }
 }
 
-// Update the calendar with reservations
+// Update the calendar with reservations - Simplified approach
 function updateCalendarWithReservations() {
     try {
-        console.log("Updating calendar with reservations...");
+        console.log("Updating calendar with reservations using simplified approach...");
+        console.log(`Total reservations to process: ${reservations ? reservations.length : 0}`);
 
-        // Reset all slots to available
+        // Get all slot elements
         const slots = document.querySelectorAll(".calendar-event");
-        console.log(`Found ${slots.length} slots to update`);
+        console.log(`Found ${slots.length} calendar slots to update`);
 
+        // If no slots found, the calendar might not be rendered yet
         if (slots.length === 0) {
-            console.warn("No calendar slots found to update. Calendar may not be rendered properly.");
-            // Try to re-render the calendar
-            setTimeout(() => {
-                console.log("Attempting to re-render the calendar...");
-                renderCalendar();
-            }, 500);
+            console.warn("No calendar slots found. Calendar may not be rendered properly.");
+            console.log("Attempting to re-render the calendar...");
+            setTimeout(renderCalendar, 100);
             return;
         }
 
-        slots.forEach(slot => {
-            // Reset to available state
-            slot.classList.remove("booked");
-            slot.classList.add("available");
-
-            // Reset text content (preserve original time text)
-            const originalText = slot.textContent.replace(" (Booked)", "");
-            slot.textContent = originalText;
-
-            // Reset styles to available state
-            slot.style.backgroundColor = "rgba(74, 222, 128, 0.2)";
-            slot.style.border = "1px solid rgb(34, 197, 94)";
-            slot.style.color = "rgb(22, 101, 52)";
-        });
-
-        // Mark booked slots
+        // Process each reservation
         if (reservations && reservations.length > 0) {
-            console.log(`Marking ${reservations.length} booked slots`);
+            // Create a map for quick lookup
+            const reservationMap = {};
 
+            // Build a map of reservations by date and slot number
             reservations.forEach(res => {
                 if (!res.date) {
                     console.warn("Reservation missing date:", res);
@@ -484,47 +489,64 @@ function updateCalendarWithReservations() {
                 }
 
                 const date = typeof res.date === 'string' ? res.date.split('T')[0] : '';
-                const slotNumber = res.slotNumber;
+                const slotNumber = res.slotNumber !== undefined ? res.slotNumber : null;
 
-                console.log(`Looking for slot with date=${date}, slotNumber=${slotNumber}`);
+                if (!date || slotNumber === null) {
+                    console.warn(`Invalid reservation data: date=${date}, slotNumber=${slotNumber}`);
+                    return;
+                }
 
-                const slot = document.querySelector(`.calendar-event[data-date="${date}"][data-slot-number="${slotNumber}"]`);
-                if (slot) {
-                    console.log(`Found slot, marking as booked`);
+                const key = `${date}-${slotNumber}`;
+                reservationMap[key] = true;
+                console.log(`Added reservation to map: ${key}`);
+            });
+
+            // Mark booked slots
+            let bookedCount = 0;
+            slots.forEach(slot => {
+                const date = slot.dataset.date;
+                const slotNumber = slot.dataset.slotNumber;
+
+                if (!date || slotNumber === undefined) {
+                    console.warn(`Slot missing date or slotNumber attributes:`, slot);
+                    return;
+                }
+
+                const key = `${date}-${slotNumber}`;
+
+                if (reservationMap[key]) {
+                    // This slot is booked
+                    bookedCount++;
+                    console.log(`Marking slot as booked: ${key}`);
 
                     // Update class
                     slot.classList.remove("available");
                     slot.classList.add("booked");
 
                     // Update text
-                    slot.textContent = slot.textContent + " (Booked)";
+                    slot.textContent = slot.textContent.trim() + " (Booked)";
 
-                    // Update styles to booked state
+                    // Update styles
                     slot.style.backgroundColor = "rgba(252, 165, 165, 0.2)";
                     slot.style.border = "1px solid rgb(239, 68, 68)";
                     slot.style.color = "rgb(153, 27, 27)";
-                } else {
-                    console.warn(`Slot not found for date=${date}, slotNumber=${slotNumber}`);
                 }
             });
+
+            console.log(`Marked ${bookedCount} slots as booked`);
         } else {
-            console.log("No reservations to display");
+            console.log("No reservations to display, all slots remain available");
         }
 
         console.log("Calendar updated successfully with reservations");
+
     } catch (error) {
         console.error("Error updating calendar with reservations:", error);
+        console.error("Error stack:", error.stack);
 
-        // Display error message to user
-        const calendarDays = document.getElementById("calendarDays");
-        if (calendarDays && calendarDays.children.length === 0) {
-            calendarDays.innerHTML = `
-                <div style="padding: 20px; text-align: center; color: #e53e3e; grid-column: span 7;">
-                    <p>Error updating calendar: ${error.message}</p>
-                    <p>Please try refreshing the page.</p>
-                </div>
-            `;
-        }
+        // Try to recover by re-rendering the calendar
+        console.log("Attempting to recover from error by re-rendering the calendar...");
+        setTimeout(renderCalendar, 500);
     }
 }
 
